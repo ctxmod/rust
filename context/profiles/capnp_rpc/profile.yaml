@@ -1,0 +1,11 @@
+title: Cap'n Proto RPC
+description: >-
+  Cap'n Proto RPC development with Rust servers, WebSocket tunneling,
+  and capability-based security: promise pipelining, reconnection, and
+  RPC error handling, with an embedding-service example. Extends the
+  capnp profile.
+extends:
+  - github.com/ctxmod/rust/context/profiles/capnp
+packages:
+  add:
+    - services
