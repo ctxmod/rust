@@ -1,0 +1,4 @@
+description: >-
+  Index freshness checks and benchmark discipline for Rust tools that
+  build derived indexes.
+binds_to_depth: main...

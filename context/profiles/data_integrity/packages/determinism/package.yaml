@@ -1,0 +1,4 @@
+description: >-
+  Determinism in Rust tools: stable ordering, reproducible output, and
+  no hidden time, randomness, or environment inputs.
+binds_to_depth: main...

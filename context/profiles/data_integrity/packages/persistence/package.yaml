@@ -1,0 +1,5 @@
+description: >-
+  Persistence doctrine for Rust tools that store data: versioned
+  persistence envelopes, canonical data forms, and the data-integrity
+  rule.
+binds_to_depth: main...
