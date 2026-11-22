@@ -8,7 +8,7 @@ The first mechanism is presented through one worked option: standalone Go genera
 
 - **Go tools for external schemas**: Standalone Go programs in `tools/internal/gen/rs/` parse non-Rust sources (JSON Schema, protobuf) and output Rust code to `pkg/rs/gen/{crate-name}/src/`. Tools use shared parsing utilities from `tools/internal/gen/common/` and language-specific templates. Generated crates are regular workspace members, committed to version control. CI freshness checks verify generated code stays in sync with schemas
 - **Procedural macros for Rust types**: Derive macros use syn/quote workflow to generate code from Rust type definitions. Input is Rust AST (types with attributes), output is generated Rust code. Compiles during macro expansion phase. Type system integration (custom derives, attribute macros) but compile-time cost scales with macro complexity
-- **Trait objects for plugins**: Dynamic loading via `libloading` with `dyn Trait` provides runtime extensibility. Plugins compiled as separate `cdylib` crates expose `#[no_mangle]` factory functions. Host loads via `libloading::Library` at runtime. ABI stability requires `abi_stable` crate or versioning discipline. Use when plugins discovered at runtime or developed independently
+- **Trait objects for plugins**: Dynamic loading via `libloading` with `dyn Trait` provides runtime extensibility. Plugins compiled as separate `cdylib` crates expose `#[unsafe(no_mangle)]` factory functions (the edition 2024 spelling). Host loads via `libloading::Library` at runtime. ABI stability requires `abi_stable` crate or versioning discipline. Use when plugins discovered at runtime or developed independently
 
 ## Mechanism Comparison
 
@@ -151,7 +151,8 @@ impl Plugin for PluginA {
     }
 }
 
-#[no_mangle]
+// Edition 2024: `no_mangle` is an unsafe attribute and must be written `#[unsafe(no_mangle)]`.
+#[unsafe(no_mangle)]
 pub extern "C" fn create_plugin() -> Box<dyn Plugin> {
     Box::new(PluginA)
 }
@@ -202,3 +203,7 @@ Recommendation: use `abi_stable` for production open plugin ecosystems. Direct t
 
 [Workspace Organization](../../workspace/reference/workspace_organization.md)
 [Error Handling](../../errors/reference/error_handling.md)
+
+## Sources
+
+- https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-attributes.html — `no_mangle`, `export_name`, and `link_section` written as `#[unsafe(...)]` in edition 2024 (accessed 2026-11-22)
