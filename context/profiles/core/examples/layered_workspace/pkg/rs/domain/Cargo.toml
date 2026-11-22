@@ -1,0 +1,11 @@
+[package]
+name = "domain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+types = { version = "0.1.0", path = "../types" }
+utils = { version = "0.1.0", path = "../utils" }

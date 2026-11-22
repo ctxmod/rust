@@ -2,4 +2,14 @@ title: Rust Core
 description: >-
   Rust development conventions covering workspace organization, error
   handling, linting, visibility standards, CLI structure, and code
-  generation. Every other rust profile extends this one.
+  generation, with two example workspaces. Every other rust profile
+  extends this one.
+packages:
+  defaults:
+    - overview
+    - workspace
+    - errors
+    - visibility
+    - lints
+    - cli
+    - codegen
