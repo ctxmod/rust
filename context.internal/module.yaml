@@ -1,0 +1,8 @@
+title: Rust Internal
+description: >-
+  Development-only context for authoring and maintaining the rust module
+  itself.
+path: github.com/ctxmod/rust/context.internal
+private: true
+requires:
+  - github.com/ctxmod/writing_context/context

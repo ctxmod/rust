@@ -1,0 +1,13 @@
+title: Rust
+description: >-
+  Rust development conventions: workspace organization, error handling,
+  visibility, linting, CLI structure, and code generation (core);
+  data-integrity doctrine for tools that persist, parse, or index data
+  (data_integrity); fixture-driven and property-based verification
+  (verification); and Cap'n Proto schema-first development and RPC for
+  Rust servers (capnp, capnp_rpc).
+path: github.com/ctxmod/rust/context
+requires:
+  - github.com/ctxmod/engineering/context
+default_profiles:
+  - core
