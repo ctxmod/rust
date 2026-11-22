@@ -33,24 +33,27 @@ use futures::{AsyncRead, AsyncWrite};
 
 async fn ws_rpc_client(url: &str) -> anyhow::Result<()> {
     let (ws_stream, _) = connect_async(url).await?;
-    let (read_half, write_half) = ws_stream.split();
+    let (write_half, read_half) = ws_stream.split(); // futures StreamExt::split: (sink, stream)
 
-    // Custom VatNetwork wrapping WebSocket halves
+    // Two-party VatNetwork over byte-stream adapters of the WebSocket halves
     let network = Box::new(VatNetwork::new(
-        Box::new(WSReader::new(read_half)),
-        Box::new(WSWriter::new(write_half)),
+        WSReader::new(read_half),
+        WSWriter::new(write_half),
         Side::Client,
         Default::default(),
     ));
 
     let mut rpc_system = RpcSystem::new(network, None);
-    let client = rpc_system.bootstrap(Side::Server);
+    let client: service::Client = rpc_system.bootstrap(Side::Server);
 
-    tokio::spawn(rpc_system);
+    // RpcSystem is !Send: drive it on the current LocalSet, not tokio::spawn
+    tokio::task::spawn_local(rpc_system);
     // Use client for RPC calls
     Ok(())
 }
 ```
+
+Call `ws_rpc_client` from inside `tokio::task::LocalSet::new().run_until(..)`.
 
 ## Custom Reader/Writer
 
