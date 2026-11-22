@@ -1,0 +1,5 @@
+description: >-
+  Rust workspace organization: virtual manifests, DAG crate
+  dependencies, layer-based crate separation, and feature-based module
+  organization.
+binds_to_depth: main...

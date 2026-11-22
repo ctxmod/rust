@@ -1,0 +1,4 @@
+description: >-
+  Rust error handling: typed library errors with thiserror versus
+  application errors with anyhow, and where the split falls.
+binds_to_depth: main...

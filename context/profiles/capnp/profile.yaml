@@ -1,0 +1,11 @@
+title: Cap'n Proto
+description: >-
+  Cap'n Proto schema-first development with code generation for Rust
+  and multi-language clients: zero-copy messages, capnpc code
+  generation, schema evolution, and schema validation. Extends the rust
+  core profile.
+extends:
+  - github.com/ctxmod/rust/context/profiles/core
+packages:
+  add:
+    - schema

@@ -1,0 +1,4 @@
+description: >-
+  Rust lint enforcement: workspace lint inheritance, clippy
+  configuration, cargo-deny, cargo-machete, and a pinned rustfmt.
+binds_to_depth: main...

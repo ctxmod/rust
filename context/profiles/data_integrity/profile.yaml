@@ -1,0 +1,16 @@
+title: Rust Data Integrity
+description: >-
+  Data-integrity doctrine for Rust tools that persist, parse, or index
+  data: persistence envelopes, canonical data, determinism, input
+  hardening, source spans, path containment, and index freshness with
+  benchmarks. Extends the rust core and verification profiles, whose
+  property and fixture testing the integrity guarantees rely on.
+extends:
+  - github.com/ctxmod/rust/context/profiles/core
+  - github.com/ctxmod/rust/context/profiles/verification
+packages:
+  add:
+    - persistence
+    - determinism
+    - parsing
+    - indexing

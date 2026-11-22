@@ -1,0 +1,5 @@
+description: >-
+  Cap'n Proto schema-first development for Rust: zero-copy messages,
+  code generation with capnpc, schema evolution rules, and schema
+  validation.
+binds_to_depth: main...
