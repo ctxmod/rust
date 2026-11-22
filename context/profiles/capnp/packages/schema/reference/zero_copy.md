@@ -39,10 +39,10 @@ Cap'n Proto achieves zero-copy serialization by designing the wire format to mat
 - SIMD-friendly for vector operations
 - Example: `<1536> :Float32` for embeddings
 
-**Async integration (v0.22+)**:
-- Stabilized `async fn` in generated `Server` traits
-- Idiomatic `async/await` with `?` and `&self`
-- `RefCell` for interior mutability
+**Async integration (capnpc 0.22+, current shape since 0.23)**:
+- Generated `Server` trait methods are `async fn` returning `Result<(), capnp::Error>`, with `?` propagation
+- The receiver is `self: Rc<Self>` (0.23+; it was `&self` in 0.22 and `&mut self` before): the RPC system is single-threaded and shares the object, so mutable state needs interior mutability (`Cell`, `RefCell`), and a method can hold `self` across `.await` points
+- Register an object you also keep a handle to with `capnp_rpc::new_client_from_rc(rc)`
 
 ## Memory Safety
 
@@ -54,3 +54,9 @@ Rust lifetimes enforce zero-copy safety:
 ## Related
 
 [Code Generation Pipeline](code_generation.md)
+
+## Sources
+
+- https://github.com/capnproto/capnproto-rust/blob/master/capnpc/CHANGELOG.md — generated `Server` traits support `async fn` with `&self` (capnpc 0.22.0) and take `self: Rc<Self>` (0.23.0) (capnpc 0.28.1, 2026-11-16; accessed 2026-11-22)
+- https://github.com/capnproto/capnproto-rust/blob/master/capnp/CHANGELOG.md — capnp 0.28.0 (MSRV 1.87.0, `Error::details`, `extra()` accessor), 0.28.2 (2026-11-22; accessed 2026-11-22)
+- https://github.com/capnproto/capnproto-rust/blob/master/capnp-rpc/CHANGELOG.md — capnp-rpc 0.22.0–0.28.0: `async fn` method support, `new_client_from_rc`, `set_background_error_handler` (capnp-rpc 0.28.0, 2026-11-15; accessed 2026-11-22)

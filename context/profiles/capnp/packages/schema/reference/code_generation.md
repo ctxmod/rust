@@ -36,13 +36,15 @@ fn main() {
 
 ```toml
 [dependencies]
-capnp = "0.20"
-capnp-rpc = "0.20"  # For RPC
-capnp-futures = "0.20"  # For async streams
+capnp = "0.28"
+capnp-rpc = "0.28"      # For RPC
+capnp-futures = "0.28"  # For async streams
 
 [build-dependencies]
-capnpc = "0.20"
+capnpc = "0.28"
 ```
+
+The four crates release in lockstep: keep them on the same minor version, because generated code from one `capnpc` minor targets the runtime API of the matching `capnp` minor (0.27 and 0.28 both changed the base-crate API that generated code calls). The 0.28 line requires Rust 1.87 (`rust-version`) and is itself built on edition 2024. Generated code no longer needs `unsafe` (capnpc 0.25+) and avoids `unreachable_pub` warnings (0.25.3+). Before tightening a crate that includes it to `unsafe_code = "forbid"`, check the generated file for local `#[allow(unsafe_code)]` annotations (capnpc 0.24.1 added them): `forbid` cannot be relaxed by an inner `allow`, so use `deny` if any remain.
 
 ## Generated Output
 
@@ -78,3 +80,10 @@ CI checks verify generated code freshness:
 
 [Schema-First Development](../rules/schema_first.md)
 [Zero-Copy Serialization](zero_copy.md)
+
+## Sources
+
+- https://crates.io/crates/capnp, https://crates.io/crates/capnp-rpc, https://crates.io/crates/capnpc, https://crates.io/crates/capnp-futures — current 0.28.2 / 0.28.0 / 0.28.1 / 0.28.0 (2026-11-15 to 2026-11-22; accessed 2026-11-22)
+- https://github.com/capnproto/capnproto-rust/blob/master/capnpc/CHANGELOG.md — generated `Server` traits support `async fn` with `&self` (capnpc 0.22.0) and take `self: Rc<Self>` (0.23.0) (capnpc 0.28.1, 2026-11-16; accessed 2026-11-22)
+- https://github.com/capnproto/capnproto-rust/blob/master/capnp/CHANGELOG.md — capnp 0.28.0 (MSRV 1.87.0, `Error::details`, `extra()` accessor), 0.28.2 (2026-11-22; accessed 2026-11-22)
+- https://github.com/capnproto/capnproto-rust/blob/master/capnp-rpc/CHANGELOG.md — capnp-rpc 0.22.0–0.28.0: `async fn` method support, `new_client_from_rc`, `set_background_error_handler` (capnp-rpc 0.28.0, 2026-11-15; accessed 2026-11-22)
