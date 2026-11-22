@@ -1,0 +1,4 @@
+description: >-
+  Property-based testing in Rust (proptest strategies, shrinking,
+  invariants) and the rstest, cargo-nextest, and doctest runner mechanics.
+binds_to_depth: main...

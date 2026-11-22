@@ -1,0 +1,12 @@
+title: Rust Verification
+description: >-
+  Verification for Rust code: fixture-driven conformance and behaviour
+  verification behind a black-box harness, property-based testing, and
+  the rstest, cargo-nextest, and doctest runner mechanics, with a
+  fixture example workspace. Extends the rust core profile.
+extends:
+  - github.com/ctxmod/rust/context/profiles/core
+packages:
+  add:
+    - fixtures
+    - property

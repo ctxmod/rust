@@ -1,0 +1,5 @@
+description: >-
+  Fixture-driven verification in Rust: committed fixture corpora behind
+  a black-box harness, independent oracles, stable case IDs, negative
+  controls, and never-blessable safety classes.
+binds_to_depth: main...

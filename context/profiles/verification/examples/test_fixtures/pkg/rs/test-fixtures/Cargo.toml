@@ -1,0 +1,14 @@
+[package]
+name = "test_fixtures"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+thiserror = { workspace = true }
+
+# Test-only dependencies stay in [dev-dependencies]: they never reach the
+# library's consumers. Where a repository's test policy keeps tests out of
+# production crates, move tests/ and this table into a separate test-only
+# crate that depends on test_fixtures — never behind a feature flag.
+[dev-dependencies]
+rstest = { workspace = true }

@@ -1,0 +1,23 @@
+[profile.default]
+# Fail fast in CI, continue locally
+fail-fast = false
+
+# Retry flaky tests
+retries = 2
+
+# Slow test timeout
+slow-timeout = { period = "60s", terminate-after = 3 }
+
+# Test status display
+status-level = "all"
+
+# Final status display
+final-status-level = "flaky"
+
+[profile.ci]
+# CI-specific profile
+fail-fast = true
+retries = 1
+
+# JUnit output for CI
+junit = { path = "junit.xml" }
