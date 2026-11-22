@@ -88,13 +88,14 @@ Error-case parameterization follows the same shape: one `#[case]` per row, and a
 
 ## cargo-nextest Execution
 
-cargo-nextest accelerates test execution via process-level parallelization — each test runs in isolation, improving reliability and speed. Any test crate may adopt it (`cargo nextest run`); where it is not installed, plain `cargo test` is the runner and the verdict semantics are identical. Configuration lives in `.config/nextest.toml` (or a workspace-root `.nextest.toml` as in the test-fixtures example).
+cargo-nextest accelerates test execution via process-level parallelization — each test runs in isolation, improving reliability and speed. Any test crate may adopt it (`cargo nextest run`); where it is not installed, plain `cargo test` is the runner and the verdict semantics are identical. Configuration lives in `.config/nextest.toml` under the workspace root — the only repository path nextest reads (`--config-file` overrides it); a root-level `.nextest.toml` is silently ignored, so its profiles never take effect. Profiles inherit from `default` (and, since nextest 0.9.115, from a named parent), and per-user UI preferences belong in `~/.config/nextest/config.toml`, not the repository.
 
 ### Compatibility Notes
 
-- Avoid rstest `#[once]` attribute (incompatible with nextest process isolation)
+- rstest `#[once]` fixtures are process-wide statics: under nextest every test runs in its own process, so a `#[once]` fixture is rebuilt per test and shares nothing, and it is never dropped (so it cannot own anything that needs cleanup) — never use it to carry state between tests, and do not count on it to amortize expensive setup under nextest
 - Use `#[fixture]` without `#[once]` for per-test isolated state
 - Each test receives fresh fixture instances in separate processes
+- Archive-and-run (`cargo nextest archive`, then `cargo nextest run --archive-file`) and partitioning (`--partition slice:1/4`, or `hash:1/4` for buckets stable as tests change; `count:` is deprecated) split one build across CI machines without rebuilding
 
 Doctests are not run by nextest: run `cargo test --doc` alongside it when doctests matter.
 
@@ -135,3 +136,9 @@ Triage a Rust finding narrowest-first, escalating only when the narrower scope i
 [Error Handling](../../../../core/packages/errors/reference/error_handling.md)
 
 The rust `verification` profile's `test_fixtures` example applies these mechanics to a small crate.
+
+## Sources
+
+- https://nexte.st/docs/configuration/ — repository config at `.config/nextest.toml` relative to the workspace root, `--config-file`, the configuration hierarchy, user config, profile inheritance since 0.9.115 (cargo-nextest 0.9.152 current, 2026-11-13; accessed 2026-11-22)
+- https://nexte.st/docs/ci-features/archiving/ and https://nexte.st/docs/ci-features/partitioning/ — archive-and-run and test partitioning (accessed 2026-11-22)
+- https://docs.rs/rstest/latest/rstest/attr.fixture.html — `#[once]` fixtures return a static reference that is never dropped; not allowed on async or generic fixtures (rstest 0.29.0; accessed 2026-11-22)

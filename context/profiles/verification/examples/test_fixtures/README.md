@@ -12,8 +12,8 @@ Demonstrates Rust testing mechanics — rstest fixtures, parametrized tests, and
 
 ```
 test_fixtures/
-├── Cargo.toml                  # Workspace manifest
-├── .nextest.toml               # Nextest configuration
+├── Cargo.toml                  # Workspace manifest (edition 2024, resolver 3)
+├── .config/nextest.toml        # Nextest configuration (the path nextest reads)
 └── pkg/rs/test-fixtures/
     ├── Cargo.toml              # Crate manifest (rstest as a dev-dependency)
     ├── src/
