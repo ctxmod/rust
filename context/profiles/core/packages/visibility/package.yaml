@@ -2,3 +2,5 @@ description: >-
   Rust visibility standards: private by default, explicit pub markers,
   and non_exhaustive for public API evolution.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"

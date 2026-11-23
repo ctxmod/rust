@@ -3,3 +3,10 @@ description: >-
   configuration, Cargo's own lints, #[expect] suppression with reasons,
   cargo-deny, cargo-machete, and a pinned rustfmt.
 binds_to_depth: main...
+binds_to_paths:
+  - "Cargo.toml"
+  - "clippy.toml"
+  - ".clippy.toml"
+  - "rustfmt.toml"
+  - "deny.toml"
+  - "*.rs"

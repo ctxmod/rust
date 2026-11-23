@@ -1,13 +1,3 @@
----
-paths:
-  - "Cargo.toml"
-  - "clippy.toml"
-  - ".clippy.toml"
-  - "rustfmt.toml"
-  - "deny.toml"
-  - "*.rs"
----
-
 # Clippy Configuration
 
 Clippy is the unified linting standard: `clippy::all` at deny level plus selective `clippy::pedantic` lints at warn — never blanket pedantic deny (false positive rates); enable individual pedantic lints only after team evaluation. The `clippy::restriction` category is cherry-picked only, due to internal contradictions: `unwrap_used`, `todo`, `unimplemented`, and `panic` denied, `expect_used` warned.

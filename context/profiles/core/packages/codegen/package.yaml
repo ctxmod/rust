@@ -2,3 +2,6 @@ description: >-
   Rust code generation mechanisms: build.rs, procedural and declarative
   macros, and committed generated sources from an external generator.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"
+  - "Cargo.toml"
