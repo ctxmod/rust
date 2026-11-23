@@ -27,10 +27,10 @@ pub enum UserError {
     #[error("invalid email format: {email}")]
     InvalidEmail { email: String },
 
-    #[error("database error: {source}")]
+    #[error("database error")]
     Database {
+        #[source]
         source: sqlx::Error,
-        #[from]
         category: ErrorCategory,
     },
 }
@@ -42,16 +42,19 @@ pub enum ErrorCategory {
     Unknown,
 }
 
-impl From<UserError> for tonic::Status {
-    fn from(err: UserError) -> Self {
-        match err {
-            UserError::NotFound { .. } => tonic::Status::not_found(err.to_string()),
-            UserError::InvalidEmail { .. } => tonic::Status::invalid_argument(err.to_string()),
-            UserError::Database { .. } => tonic::Status::internal(err.to_string()),
-        }
+impl UserError {
+    /// Builds the database variant, classifying the driver error once.
+    pub fn database(source: sqlx::Error) -> Self {
+        let category = match &source {
+            sqlx::Error::PoolTimedOut | sqlx::Error::Io(_) => ErrorCategory::Transient,
+            _ => ErrorCategory::Unknown,
+        };
+        Self::Database { source, category }
     }
 }
 ```
+
+The variant carries two fields, so it cannot take `#[from]`: thiserror's `#[from]` generates `From<sqlx::Error>` and therefore requires the source to be the variant's only field besides an optional backtrace. Mark the cause `#[source]` and construct through a classifying constructor instead. Keep the source out of the `#[error("...")]` message: the chain already reports it, and interpolating `{source}` prints the cause twice when a reporter walks `source()`.
 
 ### Application Error Chain
 
@@ -60,7 +63,7 @@ use anyhow::{Context, Result};
 
 fn process_user(id: &str) -> Result<()> {
     let user = db::find_user(id)
-        .context(format!("failed to load user {}", id))?;
+        .with_context(|| format!("failed to load user {id}"))?;
 
     validate_email(&user.email)
         .context("email validation failed")?;
@@ -68,6 +71,8 @@ fn process_user(id: &str) -> Result<()> {
     Ok(())
 }
 ```
+
+`.context("static text")` is fine for literals; use `.with_context(|| ...)` whenever the message is formatted, so the allocation happens only on the error path.
 
 ## Protocol Mappings
 
@@ -131,6 +136,12 @@ Diagnostics that scripts, dashboards, and tests key on carry stable machine code
 - **Unavailable vs invalid at protocol mappings.** The same distinction maps onto transport: an upstream that cannot be reached is Unavailable/503-class and retryable; a request the data cannot satisfy is InvalidArgument/400-class and is not. The ErrorCategory retry classification above consumes this distinction.
 - For error enums designed to grow across versions, `#[non_exhaustive]` coverage lives in the visibility reference — [Visibility Standards](../../visibility/reference/visibility.md)
 
+## Language and Ecosystem Status (Rust 1.100, 2026-11)
+
+- **`!` is a stable type since Rust 1.100**, and `std::convert::Infallible` is now an alias for it: a conversion or parse that cannot fail returns `Result<T, !>` (or keeps `Infallible`, which is the same type). The release also changes never-type fallback from `()` to `!` in editions 2015–2021 (edition 2024 already had it), which can surface new unreachable-code findings when an older-edition crate moves to 1.100.
+- **`Error::provide` (generic member access) is still nightly-only** (`error_generic_member_access`, tracking issue #99301). Do not design library error types around provider-based context retrieval; carry the data in fields and expose it through methods or the typed variant.
+- **Crate lines current at 2026-11-22**: thiserror 2.0.21 (the 2.x line is the one to depend on; 1.x is legacy), anyhow 1.0.104. snafu 0.9.2 is a legitimate alternative that combines typed errors with context selectors in one crate; it does not change the library/application split, and a workspace picks one typed-error crate rather than mixing them.
+
 ## Anti-Patterns
 
 - **Error-to-string conversion**: `err.to_string()` loses type information. Callers cannot match on specific errors. Solution: propagate via `?` or convert to protocol type
@@ -144,3 +155,11 @@ Diagnostics that scripts, dashboards, and tests key on carry stable machine code
 
 [Workspace Organization](../../workspace/reference/workspace_organization.md)
 [Code Generation Mechanisms](../../codegen/reference/code_generation_mechanisms.md)
+
+## Sources
+
+- https://docs.rs/thiserror/2.0.21/thiserror/ — `#[from]` implies `#[source]` and must be the only field besides a backtrace; `#[source]` and `#[error]` formatting (thiserror 2.0.21, 2026-09-23; accessed 2026-11-22)
+- https://docs.rs/anyhow/1.0.104/anyhow/trait.Context.html — `context` versus lazily evaluated `with_context` (anyhow 1.0.104; accessed 2026-11-22)
+- https://blog.rust-lang.org/2026/11/12/Rust-1.100.0/ — never type stabilized, `Infallible` as an alias of `!`, never-type fallback change (Rust 1.100.0, 2026-11-12; accessed 2026-11-22)
+- https://doc.rust-lang.org/std/error/trait.Error.html — `provide` nightly-only under `error_generic_member_access` (std 1.100.0; accessed 2026-11-22)
+- https://crates.io/crates/snafu — snafu 0.9.2 (2026-07-21; accessed 2026-11-22)

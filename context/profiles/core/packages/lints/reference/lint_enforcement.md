@@ -1,6 +1,6 @@
 # Lint Enforcement
 
-Rust lint enforcement uses Clippy as the unified linter with selective pedantic configuration, cargo-deny for dependency licensing and advisories, and cargo-machete for unused dependency detection. The commands and CI blocks below enforce the same zero-warning policies whether they run directly or behind a repository's own check wrapper; when a repository routes lints through such a wrapper, its gate is the wrapper and the raw cargo shape is what the wrapper runs.
+Rust lint enforcement uses Clippy as the unified linter with selective pedantic configuration, cargo-deny for dependency licensing and advisories, and Cargo's own lints (unused dependencies since Cargo 1.100) with cargo-machete as the complement for unused-dependency detection. The commands and CI blocks below enforce the same zero-warning policies whether they run directly or behind a repository's own check wrapper; when a repository routes lints through such a wrapper, its gate is the wrapper and the raw cargo shape is what the wrapper runs.
 
 ## Lint Inheritance
 
@@ -60,7 +60,6 @@ filter_map_next = "warn"
 flat_map_option = "warn"
 implicit_clone = "warn"
 inconsistent_struct_constructor = "warn"
-map_flatten = "warn"
 map_unwrap_or = "warn"
 match_bool = "warn"
 match_same_arms = "warn"
@@ -69,6 +68,18 @@ missing_panics_doc = "allow"  # Often noisy for internal code
 redundant_else = "warn"
 semicolon_if_nothing_returned = "warn"
 uninlined_format_args = "warn"
+```
+
+(`map_flatten`, sometimes listed here, is a `complexity` lint already armed by `clippy::all`.)
+
+### Cargo Lints
+
+Cargo has its own lint table, inherited the same way: `[workspace.lints.cargo]` in the root and `[lints] workspace = true` in members. Since Cargo 1.100 the warn-by-default `unused_dependencies` lint reports `[dependencies]` entries the crate never uses (it does not cover `dev-dependencies`), and `unused_workspace_dependencies` reports `[workspace.dependencies]` entries no member consumes; `missing_lints_inheritance` is the warn-by-default lint behind the inheritance rule above. Deny them where the dependency set is policy:
+
+```toml
+[workspace.lints.cargo]
+unused_dependencies = "deny"
+unused_workspace_dependencies = "warn"
 ```
 
 ### CI Enforcement
@@ -112,15 +123,16 @@ Create `deny.toml` at workspace root:
 
 ```toml
 [advisories]
-db-path = "~/.cargo/advisory-db"
-db-urls = ["https://github.com/rustsec/advisory-db"]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "warn"
-notice = "warn"
+# Vulnerability and notice advisories always error; the old
+# vulnerability/notice/unlicensed/copyleft/default keys are rejected.
+yanked = "deny"
+unmaintained = "workspace"   # all | workspace (default) | transitive | none
+ignore = [
+    { id = "RUSTSEC-2024-0001", reason = "low severity, no patch available, tracked in #123" },
+]
 
 [licenses]
-unlicensed = "deny"
+# Every license not listed is denied.
 allow = [
     "MIT",
     "Apache-2.0",
@@ -130,8 +142,6 @@ allow = [
     "ISC",
     "Zlib",
 ]
-copyleft = "warn"
-default = "deny"
 
 [bans]
 multiple-versions = "warn"
@@ -154,15 +164,11 @@ allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 
 ### Advisory Database
 
-cargo-deny queries the Rust Security Advisory Database. Update regularly:
-
-```bash
-cargo deny check --update-advisory-db
-```
+cargo-deny fetches the RustSec advisory database (into `$CARGO_HOME/advisory-dbs` by default) on each run. When fetching is disabled for an offline run, `maximum-db-staleness` (default `P90D`) bounds how old the local copy may be before the check fails rather than passing on stale data.
 
 ## cargo-machete
 
-cargo-machete detects unused dependencies in Cargo.toml files. Remove false positives via inline comments. Run in CI to prevent dependency drift.
+cargo-machete detects unused dependencies by searching crate sources for each dependency's import name. With Cargo's `unused_dependencies` lint (1.100+) covering `[dependencies]` from compiler information, cargo-machete remains useful for `dev-dependencies` and `build-dependencies`, and for workspaces whose toolchain floor predates 1.100. Run it in CI to prevent dependency drift.
 
 ### Installation
 
@@ -182,16 +188,18 @@ cargo machete --fix
 
 ### False Positive Handling
 
-Mark dependencies as used with inline comments:
+cargo-machete reads an ignore list from manifest metadata — comments are not a suppression mechanism:
 
 ```toml
-[dependencies]
-# used-by: build.rs
-prost-build = "0.12"
+[package.metadata.cargo-machete]
+ignored = ["prost"]   # used only by build.rs-generated code
 
-# used-by: tests/
-tokio-test = "0.4"
+# or once for the whole workspace, in the root manifest
+[workspace.metadata.cargo-machete]
+ignored = ["prost"]
 ```
+
+For a crate whose import name differs from its package name, prefer the `renamed` table over `ignored`, so a later genuinely-unused state is still detected; `--with-metadata` resolves names through `cargo metadata` at the cost of possibly rewriting `Cargo.lock`. Only `build.rs` itself is searched for build-dependencies, not modules it loads.
 
 ### CI Integration
 
@@ -254,23 +262,23 @@ tokio-test = "0.4"
 
 **cargo-machete failure**:
 1. Verify dependency is truly unused (check build scripts, tests, conditional compilation)
-2. Remove from Cargo.toml or add `# used-by:` comment with justification
+2. Remove from Cargo.toml, or add it to `package.metadata.cargo-machete.ignored` with a comment naming the use
 3. Re-run cargo-machete to verify
 
 ## Exception Handling
 
-### Clippy Allow Annotations
+### Lint Suppression with `#[expect]`
 
-Suppress specific lints with allow attributes when justified:
+Suppress a specific lint with `#[expect(..., reason = "...")]` (Rust 1.81+) rather than `#[allow]`: `expect` itself warns (`unfulfilled_lint_expectations`) once the suppressed lint no longer fires, so stale suppressions surface instead of accumulating, and the `reason` string is printed in the compiler message, keeping the rationale with the code.
 
 ```rust
-#[allow(clippy::unwrap_used)]
+#[expect(clippy::unwrap_used, reason = "index validated by the caller's bounds check")]
 fn internal_helper() {
-    // Unwrap acceptable in test helpers with invariant guarantees
+    // ...
 }
 ```
 
-Document rationale in code comments or commit messages.
+Keep `#[allow]` for suppressions that are legitimately conditional (a lint that fires under one `cfg` or feature set only), still with a `reason`. Two restriction lints make this mechanical: `clippy::allow_attributes_without_reason` requires a `reason` on every `allow`, and `clippy::allow_attributes` rejects `#[allow]` in favor of `#[expect]`.
 
 ### cargo-deny Exceptions
 
@@ -279,27 +287,33 @@ Allow specific advisories or licenses in `deny.toml`:
 ```toml
 [advisories]
 ignore = [
-    "RUSTSEC-2024-0001",  # Low severity, no patch available, tracked in #123
+    { id = "RUSTSEC-2024-0001", reason = "low severity, no patch available, tracked in #123", expiry = "2027-03-31" },
 ]
 
 [licenses]
-allow = ["GPL-3.0"]  # Internal tool, GPL compatible
+exceptions = [
+    { allow = ["GPL-3.0"], crate = "internal-tool" },  # scoped to one crate, not workspace-wide
+]
 ```
 
-Document justification in comments.
+Carry the justification in `reason` (it is reported with the finding); an `expiry` turns a forgotten exception back into a failure.
 
 ### cargo-machete False Positives
 
-Mark dependencies as used when static analysis cannot detect usage:
-
-```toml
-[build-dependencies]
-# used-by: build.rs for code generation
-prost-build = "0.12"
-```
+List dependencies static search cannot see in `[package.metadata.cargo-machete] ignored`, with a comment naming where the use lives (see False Positive Handling above).
 
 ## Related
 
 [Workspace Organization](../../workspace/reference/workspace_organization.md)
 [Error Handling](../../errors/reference/error_handling.md)
 The rust `core` profile's `layered_workspace` example carries a complete virtual-manifest workspace.
+
+## Sources
+
+- https://doc.rust-lang.org/cargo/reference/lints.html — Cargo lints: `unused_dependencies` (style, warn), `unused_workspace_dependencies`, `missing_lints_inheritance` (suspicious, warn) (accessed 2026-11-22)
+- https://blog.rust-lang.org/2026/11/12/Rust-1.100.0/ — unused dependency warnings controlled by `[lints.cargo]`, not covering dev-dependencies (Rust 1.100.0, 2026-11-12; accessed 2026-11-22)
+- https://blog.rust-lang.org/2024/09/05/Rust-1.81.0/ — the `expect` lint level and lint reasons, `clippy::allow_attributes` and `allow_attributes_without_reason` (Rust 1.81.0; accessed 2026-11-22)
+- https://clippy.rust-lang.org/stable/index.html — lint groups (`map_flatten` is complexity; the selective list above is pedantic; the two allow-attribute lints are restriction) (accessed 2026-11-22)
+- https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html — version-2 advisories schema, removed `vulnerability`/`notice` keys, `unmaintained` scopes, `ignore` with `reason`/`expiry`, `maximum-db-staleness` (cargo-deny 0.22.0 current; accessed 2026-11-22)
+- https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html — removed `unlicensed`/`copyleft`/`default`/`deny` keys, `allow` and `exceptions` (accessed 2026-11-22)
+- https://github.com/bnjbvr/cargo-machete — `package.metadata.cargo-machete.ignored`, `workspace.metadata`, `renamed`, `--with-metadata`, build.rs search scope (cargo-machete 0.10.1; accessed 2026-11-22)

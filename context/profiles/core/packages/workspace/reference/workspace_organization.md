@@ -46,7 +46,11 @@ Root `Cargo.toml`:
 ```toml
 [workspace]
 members = ["pkg/rs/**/"]
-resolver = "2"
+resolver = "3"   # MSRV-aware resolution; a virtual root has no edition to imply it
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"   # the declared floor, verified in CI (see MSRV policy)
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -60,6 +64,8 @@ Member crate `Cargo.toml`:
 [package]
 name = "my-domain"
 version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 serde = { workspace = true }
@@ -86,8 +92,14 @@ Dependency posture is build substrate: resolver behavior and provenance rules ap
 ### MSRV and Toolchain Policy
 
 - Declare `rust-version` in every member manifest and verify the floor holds (`cargo-msrv` find/verify). The declared MSRV and the committed `rust-toolchain.toml` pin are different documents: the pin fixes what this machine builds with; `rust-version` declares the oldest toolchain the crates support. A pin posture that differs from another language's toolchain policy is recorded under Root Files above.
-- Enable MSRV-aware resolution workspace-wide: `resolver.incompatible-rust-versions = "fallback"` in `.cargo/config.toml` (opt-in since 1.84; the implied default for edition 2024). **A virtual manifest must set the resolver explicitly** — the virtual root has no edition of its own, so the implied default silently does not apply workspace-wide.
+- Enable MSRV-aware resolution workspace-wide with `resolver = "3"` in `[workspace]` (Cargo 1.84+): it changes the default of `resolver.incompatible-rust-versions` from `allow` to `fallback`, so the resolver prefers dependency versions whose `rust-version` fits the workspace's. Resolver 3 is the implied default only for a root *package* on edition 2024. **A virtual manifest must set it explicitly** — the virtual root has no edition of its own, so it silently stays on resolver 1 semantics otherwise. A workspace that must stay on resolver 2 sets `[resolver] incompatible-rust-versions = "fallback"` in `.cargo/config.toml` instead.
+- `fallback` is a preference, not a guarantee: when no compatible version satisfies a requirement Cargo still picks an incompatible one, so the CI MSRV check remains the enforcement.
+- Share `edition` and `rust-version` through `[workspace.package]` and opt each member in with `edition.workspace = true` / `rust-version.workspace = true`, so one edit moves the floor for every crate.
 - MSRV-aware selection changes which dependency versions resolve: without it, a freshly published crate requiring a newer compiler enters the graph and the declared floor becomes fiction.
+
+### Dependency Cooldown
+
+Since Cargo 1.100, `[registry] global-min-publish-age = "7 days"` in `.cargo/config.toml` (per registry: `registries.<name>.min-publish-age`) makes resolution skip versions published more recently than the window, unless the lockfile already holds them, and reports what it held back. A cooldown is a supply-chain control against freshly published compromised releases; pair it with cargo-deny's advisory check, which covers the opposite risk of staying on a known-vulnerable old version.
 
 ### Git-Dependency Pinning
 
@@ -225,3 +237,10 @@ pub use profile::{Profile, ProfileService};
 ## Related
 
 [Error Handling](../../errors/reference/error_handling.md)
+
+## Sources
+
+- https://doc.rust-lang.org/cargo/reference/resolver.html — resolver versions 1–3, resolver 3 as the edition-2024 default (Rust 1.84+), virtual workspaces setting `resolver` in `[workspace]`, `fallback` semantics (accessed 2026-11-22)
+- https://doc.rust-lang.org/cargo/reference/config.html — `resolver.incompatible-rust-versions` (respected as of 1.84), `registry.global-min-publish-age` and `resolver.incompatible-publish-age` (respected as of 1.100) (accessed 2026-11-22)
+- https://doc.rust-lang.org/cargo/reference/workspaces.html — `[workspace.package]` inheritance of `edition` and `rust-version` (accessed 2026-11-22)
+- https://blog.rust-lang.org/2026/11/12/Rust-1.100.0/ — dependency cooldowns via `global-min-publish-age` (Rust 1.100.0, 2026-11-12; accessed 2026-11-22)

@@ -1,5 +1,6 @@
 description: >-
-  Rust workspace organization: virtual manifests, DAG crate
-  dependencies, layer-based crate separation, and feature-based module
-  organization.
+  Rust workspace organization: the edition 2024 and stable-language
+  baseline, virtual manifests with resolver 3 and shared edition and
+  MSRV, DAG crate dependencies, layer-based crate separation,
+  supply-chain posture, and feature-based module organization.
 binds_to_depth: main...

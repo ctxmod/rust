@@ -53,117 +53,122 @@ After running `cargo build`, generated types appear in `pkg/rs/gen/embedding_cap
 
 ## Server Implementation
 
-`pkg/rs/src/embedding_service.rs`:
+`pkg/rs/src/embedding_service.rs` — generated `Server` traits (capnp 0.28) are `async fn` taking `self: Rc<Self>`, so mutable state sits behind `RefCell`, and `search` streams batches into the client-supplied `ResultSink` capability (the schema adjustment noted above):
 ```rust
-use capnp::capability::Promise;
-use crate::gen::embedding_capnp::{embedding_service, Embedding, Event};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::gen::embedding_capnp::embedding_service;
 
 pub struct EmbeddingServiceImpl {
-    store: EmbeddingStore,
+    store: RefCell<EmbeddingStore>,
 }
 
 impl embedding_service::Server for EmbeddingServiceImpl {
     async fn store(
-        &mut self,
+        self: Rc<Self>,
         params: embedding_service::StoreParams,
         mut results: embedding_service::StoreResults,
     ) -> Result<(), capnp::Error> {
         let embedding = params.get()?.get_embedding()?;
-        let id = self.store.add(embedding)?;
+        let id = self.store.borrow_mut().add(embedding)?;
 
-        results.get().set_id(&id);
-        results.get().set_stored_at(current_timestamp());
+        let mut r = results.get();
+        r.set_id(&id);
+        r.set_stored_at(current_timestamp());
         Ok(())
     }
 
     async fn search(
-        &mut self,
+        self: Rc<Self>,
         params: embedding_service::SearchParams,
-        mut results: embedding_service::SearchResults,
-    ) -> Promise<(), capnp::Error> {
-        let query = params.get()?.get_query()?;
-        let k = params.get()?.get_k();
+        _results: embedding_service::SearchResults,
+    ) -> Result<(), capnp::Error> {
+        let p = params.get()?;
+        let (query, k, sink) = (p.get_query()?, p.get_k(), p.get_sink()?);
 
-        Promise::from_future(async move {
-            let results_stream = self.store.search(query, k).await;
-
-            while let Some(batch) = results_stream.next().await {
-                let mut results_builder = results.get();
-                let mut results_list = results_builder.reborrow().init_results(batch.len() as u32);
-
-                for (i, embedding) in batch.iter().enumerate() {
-                    // Fill results list
-                }
-            }
-
-            Ok(())
-        })
+        // Collect under the borrow, then release it: no RefCell borrow across .await.
+        let batches = self.store.borrow().search(query, k);
+        for batch in batches {
+            let mut push = sink.push_request();
+            fill_results(push.get().init_results(batch.len() as u32), &batch);
+            push.send().await?; // `-> stream` call: flow-controlled by the RPC system
+        }
+        sink.done_request().send().promise.await?;
+        Ok(())
     }
 }
 ```
 
 ## WebSocket Server
 
-`pkg/rs/src/ws_server.rs`:
+`pkg/rs/src/ws_server.rs` — Cap'n Proto RPC is `Rc`-based and `!Send`, so the accept loop runs inside a `tokio::task::LocalSet` and each connection's `RpcSystem` is driven with `spawn_local`:
 ```rust
-use capnp_rpc::{RpcSystem, twoparty::VatNetwork, rpc_twoparty_capnp::Side};
-use tokio_tungstenite::{accept_async, tungstenite::Message};
+use capnp_rpc::{rpc_twoparty_capnp::Side, twoparty::VatNetwork, RpcSystem};
+use tokio::net::TcpListener;
+use tokio_tungstenite::accept_async;
 
-async fn handle_ws_connection(stream: TcpStream) -> anyhow::Result<()> {
-    let ws_stream = accept_async(stream).await?;
-    let (read_half, write_half) = ws_stream.split();
+use crate::gen::embedding_capnp::embedding_service;
 
-    let network = VatNetwork::new(
-        WSReader::new(read_half),
-        WSWriter::new(write_half),
-        Side::Server,
-        Default::default(),
-    );
+async fn serve(listener: TcpListener) -> anyhow::Result<()> {
+    let service: embedding_service::Client =
+        capnp_rpc::new_client(EmbeddingServiceImpl::new());
 
-    let bootstrap: EmbeddingServiceImpl = EmbeddingServiceImpl::new();
-    let rpc_system = RpcSystem::new(Box::new(network), Some(bootstrap.client));
+    loop {
+        let (stream, _) = listener.accept().await?;
+        let ws_stream = accept_async(stream).await?;
+        let (write_half, read_half) = ws_stream.split();
 
-    rpc_system.run().await?;
-    Ok(())
+        let network = VatNetwork::new(
+            WSReader::new(read_half),
+            WSWriter::new(write_half),
+            Side::Server,
+            Default::default(),
+        );
+        let rpc_system = RpcSystem::new(Box::new(network), Some(service.clone().client));
+        tokio::task::spawn_local(rpc_system);
+    }
 }
+
+// main: tokio::task::LocalSet::new().run_until(serve(listener)).await
 ```
 
 ## WebSocket Client (Rust)
 
-`pkg/rs/src/ws_client.rs`:
+`pkg/rs/src/ws_client.rs` — `auto_reconnect` takes a synchronous closure; `new_future_client` lets it hand back a client while the asynchronous connect is still in flight:
 ```rust
-use capnp_rpc::auto_reconnect;
+use capnp_rpc::{auto_reconnect, new_future_client, rpc_twoparty_capnp::Side, twoparty::VatNetwork, RpcSystem};
 
-async fn create_client(url: &str) -> anyhow::Result<EmbeddingServiceClient> {
-    let (client, _) = auto_reconnect(|| async {
-        let (ws, _) = tokio_tungstenite::connect_async(url).await?;
-        let (read, write) = ws.split();
+use crate::gen::embedding_capnp::embedding_service;
 
-        let network = VatNetwork::new(
-            WSReader::new(read),
-            WSWriter::new(write),
-            Side::Client,
-            Default::default(),
-        );
+async fn connect(url: String) -> capnp::Result<embedding_service::Client> {
+    let (ws, _) = tokio_tungstenite::connect_async(&url)
+        .await
+        .map_err(|e| capnp::Error::disconnected(e.to_string()))?;
+    let (write, read) = ws.split();
 
-        let rpc_system = RpcSystem::new(Box::new(network), None);
-        let client = rpc_system.bootstrap(Side::Server);
+    let network = VatNetwork::new(WSReader::new(read), WSWriter::new(write), Side::Client, Default::default());
+    let mut rpc_system = RpcSystem::new(Box::new(network), None);
+    let client: embedding_service::Client = rpc_system.bootstrap(Side::Server);
 
-        tokio::spawn(rpc_system);
-        Ok(client)
-    });
-
+    tokio::task::spawn_local(rpc_system); // on the caller's LocalSet
     Ok(client)
 }
 
-async fn use_client(client: &EmbeddingServiceClient) -> anyhow::Result<()> {
+fn create_client(url: &str) -> capnp::Result<embedding_service::Client> {
+    let url = url.to_owned();
+    let (client, _set_target) = auto_reconnect(move || Ok(new_future_client(connect(url.clone()))))?;
+    Ok(client)
+}
+
+async fn use_client(client: &embedding_service::Client) -> anyhow::Result<()> {
     let mut request = client.store_request();
     request.get().set_embedding(/* ... */)?;
 
     let response = request.send().promise.await?;
-    let id = response.get()?.get_id()?;
+    let id = response.get()?.get_id()?.to_str()?;
 
-    println!("Stored embedding with id: {}", id);
+    println!("Stored embedding with id: {id}");
     Ok(())
 }
 ```
@@ -172,11 +177,12 @@ async fn use_client(client: &EmbeddingServiceClient) -> anyhow::Result<()> {
 
 - Zero-copy: Embeddings map directly from buffer
 - SIMD-friendly: Fixed-size arrays for constant dimensions
-- Pipelining: Chain `store().search()` in single RTT
+- Pipelining: calls on capabilities returned by an earlier call ride the same round trip (data results such as `id` must still be awaited)
 - Bandwidth: Packed encoding saves 10-30%
 
 ## Related
 
 - Zero-copy serialization: the `capnp` profile, `schema` package, `reference/zero_copy.md`
-- WebSocket tunneling: the `capnp_rpc` profile, `rpc` package, `rules/websocket_tunneling.md`
-- Reconnection: the `capnp_rpc` profile, `rpc` package, `reference/reconnection.md`
+- WebSocket tunneling: the `capnp_rpc` profile, `services` package, `rules/websocket_tunneling.md`
+- Reconnection: the `capnp_rpc` profile, `services` package, `reference/reconnection.md`
+- Server trait and client API shapes follow the capnp-rpc 0.28 `hello-world` and `calculator` examples in the capnproto-rust repository

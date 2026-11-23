@@ -1,6 +1,6 @@
 # Property, Metamorphic, and Fuzz Verification
 
-Property and fuzz checks generate inputs instead of enumerating them. Property, metamorphic, and fuzz verification covers property kinds, metamorphic relations without an oracle, edge-biased shrinkable generators, fixed seeds and committed regression files, bounded case counts, and cargo-fuzz as deliberate exploratory evidence. Bounded property runs (fixed seeds, capped case counts) fit wherever the repository runs its tests; open-ended fuzzing and long property campaigns are deliberate verification — run them when someone chooses to, never from a hook, pre-commit, pre-push, or per-commit CI gate. The checks live wherever the repository's test policy places tests: in-crate, in a crate's `tests/` targets, or in a separate test-only or harness crate. Crate facts were verified against proptest 1.11.0, quickcheck 1.1.0, cargo-fuzz 0.13.2, libfuzzer-sys 0.4.13, and arbitrary 1.4.2 (2026-10-04).
+Property and fuzz checks generate inputs instead of enumerating them. Property, metamorphic, and fuzz verification covers property kinds, metamorphic relations without an oracle, edge-biased shrinkable generators, fixed seeds and committed regression files, bounded case counts, and cargo-fuzz as deliberate exploratory evidence. Bounded property runs (fixed seeds, capped case counts) fit wherever the repository runs its tests; open-ended fuzzing and long property campaigns are deliberate verification — run them when someone chooses to, never from a hook, pre-commit, pre-push, or per-commit CI gate. The checks live wherever the repository's test policy places tests: in-crate, in a crate's `tests/` targets, or in a separate test-only or harness crate. Crate facts were verified against proptest 1.11.0, quickcheck 1.1.0, cargo-fuzz 0.13.2, libfuzzer-sys 0.4.13, and arbitrary 1.4.2 (2026-10-04); bolero against 0.13.7 (2026-11-22). Current lines at 2026-11-22: proptest 1.12.0, arbitrary 1.5.0.
 
 ## Property Kinds
 
@@ -52,6 +52,8 @@ Fuzzing uses cargo-fuzz with libfuzzer-sys and arbitrary:
 - Minimize the corpus with `cargo fuzz cmin`, and each crashing input with `cargo fuzz tmin`.
 - Promote every crash to a deterministic regression case: commit the minimized input as a fixture, together with an ordinary check that replays it on the stable toolchain.
 
+bolero is the alternative when one harness should serve both roles: a `bolero::check!()` test runs as an ordinary `#[test]` that replays the committed corpus under `cargo test`, and `cargo bolero test <target>` drives the same target under a coverage-guided engine (libFuzzer by default; AFL, honggfuzz, and Kani are selectable with `--engine`). It runs on stable with `--sanitizer NONE`; sanitizers still need nightly. Choose it over cargo-fuzz when the fuzz targets should live beside the property tests instead of in a separate crate; the regression-promotion rule below applies unchanged.
+
 Fuzzing is exploratory evidence, not a pass/fail gate. A fuzz run that finds nothing proves nothing on its own. Never claim "fuzzed clean" without stating the target, the duration, the corpus size, and the toolchain.
 
 ## Concurrency Testing
@@ -88,3 +90,9 @@ proptest! {
 
 - Runner mechanics (rstest, cargo-nextest) and isolation principles for these checks: [Test Runners](test_runners.md)
 - The span, round-trip, and char-boundary invariants that properties most often assert: Source Spans and Permissive Extraction (in the `data_integrity` profile)
+
+## Sources
+
+- https://github.com/camshaft/bolero — `bolero::check!`, `cargo bolero test` (bolero 0.13.7, 2026-10-03; accessed 2026-11-22)
+- https://github.com/camshaft/bolero/blob/master/book/src/features/unified-interface.md, corpus-replay.md, rust-stable.md — engines and `--engine`, corpus replay under `cargo test`, stable runs with `--sanitizer NONE` (accessed 2026-11-22)
+- https://crates.io/crates/proptest and https://crates.io/crates/arbitrary — current versions 1.12.0 (2026-10-10) and 1.5.0 (2026-10-06) (accessed 2026-11-22)
