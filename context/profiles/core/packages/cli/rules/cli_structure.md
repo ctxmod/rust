@@ -1,9 +1,3 @@
----
-paths:
-  - "*.rs"
-  - "Cargo.toml"
----
-
 # CLI Structure
 
 Every Rust binary is a thin `src/main.rs` over a library body — the lib/bin split exists from day one, and where build tooling discovers tools by path (a `tools/*/src/main.rs` glob, for instance) the entry point's location is what makes a crate discoverable as a tool. Parse arguments with clap's derive API, the ecosystem default; the builder API is for compile-time-sensitive or exotic cases only. There is no separate Rust CLI profile: this rule is the CLI guidance for any Rust binary the rust `core` profile reaches.

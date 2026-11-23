@@ -2,3 +2,6 @@ description: >-
   Rust CLI structure: a thin clap-derive main over a library crate, and
   exit-code strata.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"
+  - "Cargo.toml"

@@ -4,3 +4,6 @@ description: >-
   MSRV, DAG crate dependencies, layer-based crate separation,
   supply-chain posture, and feature-based module organization.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"
+  - "Cargo.toml"
