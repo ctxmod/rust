@@ -1,3 +1,17 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+---
+
 # Data Integrity
 
 Rust code that persists derived state, parses authored text, resolves paths under a root, or maintains an incremental index follows four disciplines. Load archives through checked access behind a versioned envelope header, and publish them atomically. Spans are UTF-8 byte offsets; edits splice the original bytes; duplicate keys and unknown fields surface as diagnostics. Containment compares canonical paths component-wise, and the symlink policy is declared per file class. A partial scan never means deletion, and a coverage error never means empty.

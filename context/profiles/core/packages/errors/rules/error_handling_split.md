@@ -1,3 +1,27 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+  - "Cargo.toml"
+  - "*/Cargo.toml"
+  - "*/*/Cargo.toml"
+  - "*/*/*/Cargo.toml"
+  - "*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/*/*/*/Cargo.toml"
+---
+
 # Error Handling Split
 
 Libraries use thiserror for matchable error enums with protocol mappings. Applications use anyhow for ergonomic error chains with context. Convert between representations at service boundaries by implementing `From<DomainError>` for the protocol type (`tonic::Status`, HTTP status codes) there. Never return `anyhow::Result` from a library's public functions — callers cannot match — and do not build per-callsite error enums inside application crates — overhead without benefit.

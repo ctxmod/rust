@@ -5,6 +5,11 @@ paths:
   - "*/*/Cargo.toml"
   - "*/*/*/Cargo.toml"
   - "*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/*/*/Cargo.toml"
+  - "*/*/*/*/*/*/*/*/*/Cargo.toml"
 ---
 
 # Workspace Organization

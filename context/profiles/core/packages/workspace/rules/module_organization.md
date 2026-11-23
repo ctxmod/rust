@@ -1,3 +1,17 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+---
+
 # Module Organization
 
 Organize modules by domain features (user, auth, payment) rather than technical layers (handlers, models, services). Each feature module contains all its related code — types, business logic, handlers, storage. Prefer flat structures: limit nesting to 2-3 levels, `src/user/auth.rs` over `src/handlers/user/auth/login.rs`. Use `pub use` re-exports at the feature-module root to flatten the public API.
