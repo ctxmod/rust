@@ -1,17 +1,3 @@
----
-paths:
-  - "*.rs"
-  - "*/*.rs"
-  - "*/*/*.rs"
-  - "*/*/*/*.rs"
-  - "*/*/*/*/*.rs"
-  - "*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*/*/*.rs"
----
-
 # Input Hardening
 
 Code that consumes externally-sourced bytes — files, network, embedded payloads — treats every input as adversarial. Parser security failures come from limits bolted on after growth, not before.

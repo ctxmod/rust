@@ -1,27 +1,3 @@
----
-paths:
-  - "*.capnp"
-  - "*/*.capnp"
-  - "*/*/*.capnp"
-  - "*/*/*/*.capnp"
-  - "*/*/*/*/*.capnp"
-  - "*/*/*/*/*/*.capnp"
-  - "*/*/*/*/*/*/*.capnp"
-  - "*/*/*/*/*/*/*/*.capnp"
-  - "*/*/*/*/*/*/*/*/*.capnp"
-  - "*/*/*/*/*/*/*/*/*/*.capnp"
-  - "*.rs"
-  - "*/*.rs"
-  - "*/*/*.rs"
-  - "*/*/*/*.rs"
-  - "*/*/*/*/*.rs"
-  - "*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*/*/*.rs"
----
-
 # Schema-First Development
 
 Cap'n Proto schema files (`.capnp`) are the authoritative source for all shared types, constants, and RPC interface definitions. Rust code consuming these concepts must use generated types from `capnpc`, not hand-written equivalents.

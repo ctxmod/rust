@@ -1,19 +1,7 @@
 ---
 paths:
   - "*ws*.rs"
-  - "*/*ws*.rs"
-  - "*/*/*ws*.rs"
-  - "*/*/*/*ws*.rs"
-  - "*/*/*/*/*ws*.rs"
-  - "*/*/*/*/*/*ws*.rs"
-  - "*/*/*/*/*/*/*ws*.rs"
   - "*websocket*.rs"
-  - "*/*websocket*.rs"
-  - "*/*/*websocket*.rs"
-  - "*/*/*/*websocket*.rs"
-  - "*/*/*/*/*websocket*.rs"
-  - "*/*/*/*/*/*websocket*.rs"
-  - "*/*/*/*/*/*/*websocket*.rs"
 ---
 
 # WebSocket Tunneling

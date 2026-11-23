@@ -2,3 +2,5 @@ description: >-
   Parsing externally sourced bytes in Rust: input hardening, source
   spans with permissive extraction, and path containment.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"

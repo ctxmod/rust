@@ -3,3 +3,5 @@ description: >-
   persistence envelopes, canonical data forms, and the data-integrity
   rule.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"
