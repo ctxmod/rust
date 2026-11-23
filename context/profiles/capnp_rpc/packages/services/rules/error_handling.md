@@ -1,3 +1,17 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+---
+
 # Error Handling
 
 Cap'n Proto uses explicit `Result`-based error handling with `capnp::Error`, whose public `kind: ErrorKind` drives handling. Use `?` for propagation. Handle `Disconnected` and `Overloaded` explicitly in RPC contexts.

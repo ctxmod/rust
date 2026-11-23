@@ -1,3 +1,17 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+---
+
 # Fixture-Driven Verification
 
 Conformance and behavior verification for parsers, compilers, and emitters is fixture-driven: fixtures are committed data consumed by a black-box harness, never conventional test files and never product test modes.

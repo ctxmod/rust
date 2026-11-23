@@ -1,3 +1,17 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+---
+
 # Visibility Standards
 
 All types private by default. Add `pub` only when external code must access the item, keep fields private behind constructors rather than exposing internal representation, and flatten the public surface through explicit `pub use` re-exports at the module root — internal modules stay private. Apply `#[non_exhaustive]` to public enums and structs so future variants and fields are additive, not breaking.

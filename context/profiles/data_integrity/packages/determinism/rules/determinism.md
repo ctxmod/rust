@@ -1,3 +1,17 @@
+---
+paths:
+  - "*.rs"
+  - "*/*.rs"
+  - "*/*/*.rs"
+  - "*/*/*/*.rs"
+  - "*/*/*/*/*.rs"
+  - "*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*.rs"
+  - "*/*/*/*/*/*/*/*/*/*.rs"
+---
+
 # Determinism
 
 Outputs are independent of scheduling: identical inputs produce identical semantic outputs regardless of worker count or completion order; byte outputs are identical under a pinned writer profile.
