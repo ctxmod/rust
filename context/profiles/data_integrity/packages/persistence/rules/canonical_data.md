@@ -1,17 +1,3 @@
----
-paths:
-  - "*.rs"
-  - "*/*.rs"
-  - "*/*/*.rs"
-  - "*/*/*/*.rs"
-  - "*/*/*/*/*.rs"
-  - "*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*/*.rs"
-  - "*/*/*/*/*/*/*/*/*/*.rs"
----
-
 # Canonical Data
 
 Data that survives hashing, caching, comparison, or publication is exact by domain, canonical by contract, and stamped with its version.

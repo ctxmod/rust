@@ -3,3 +3,5 @@ description: >-
   a black-box harness, independent oracles, stable case IDs, negative
   controls, and never-blessable safety classes.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"

@@ -2,3 +2,5 @@ description: >-
   Cap'n Proto RPC for Rust servers: promise pipelining, reconnection,
   error handling, and WebSocket tunneling with capability-based security.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.rs"

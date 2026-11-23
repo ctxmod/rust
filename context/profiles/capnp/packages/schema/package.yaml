@@ -3,3 +3,6 @@ description: >-
   code generation with capnpc, schema evolution rules, and schema
   validation.
 binds_to_depth: main...
+binds_to_paths:
+  - "*.capnp"
+  - "*.rs"
