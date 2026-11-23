@@ -4,7 +4,7 @@ Libraries use thiserror for matchable error enums with protocol mappings. Applic
 
 Diagnostics carry stable machine codes from a maintained registry: one home per code, retired codes marked and never renumbered or reused, severity immutable — new behavior gets a new code. Corrupt input is an engine error with a causal `source()` chain, never a domain no-result.
 
-Error catalogs with 50+ codes may switch to the single-struct + kind-enum pattern; the enum pattern is optimal below 50 codes. Flagship posture (2026 corpus, eight repos): anyhow-only or anyhow+thiserror dominates; hand-rolled enums are legitimate at scale (just's 1,100-line `Error<'src>`, rust-analyzer); `miette`/`eyre` appear in none of them; binaries terminate through an own `ExitCode` enum rather than raw `process::exit` (fd's pattern).
+Error catalogs with 50+ codes may switch to the single-struct + kind-enum pattern; below 50 the enum pattern is optimal. The flagship posture behind the split (2026 corpus, eight repos) is in Error Handling.
 
 - the thiserror and anyhow worked examples, gRPC and HTTP protocol mappings, error-category retry classification, the enum-vs-struct scaling threshold, and the split's anti-patterns — [Error Handling](../reference/error_handling.md)
 - the crate layers whose boundaries are the conversion points — [Workspace Organization](../../workspace/reference/workspace_organization.md)
